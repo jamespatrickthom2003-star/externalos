@@ -467,6 +467,61 @@
 </section>
 
 
+<!-- REMOTE MOBILE CODING -->
+<section>
+  <div class="wrap">
+    <div class="label reveal">Remote workflow</div>
+    <h2 class="reveal d1">Code from your phone.<br/><span class="g">Your PC does the work.</span></h2>
+    <p class="body reveal d2" style="max-width:620px;margin-top:18px;">
+      Your always-on PC runs Claude Code inside tmux. You SSH in from your phone,
+      tablet, or any device. Start a task on the train, review results
+      from the sofa. Your ExternalOS context follows you everywhere
+      because it lives in Notion, not on a single machine.
+    </p>
+
+    <div class="steps reveal d2" style="margin-top:36px;">
+      <div class="step">
+        <span class="step-n">01</span>
+        <h3>Leave your PC running</h3>
+        <p>Start Claude Code in a tmux or screen session on your desktop. It stays connected, keeps context, and executes tasks while you're away from the keyboard.</p>
+        <span class="step-ghost-num">1</span>
+      </div>
+      <div class="step">
+        <span class="step-n">02</span>
+        <h3>SSH from any device</h3>
+        <p>Use Termius, Blink, or any SSH app on your phone. Connect to your PC over Tailscale or a simple SSH tunnel. No port forwarding headaches.</p>
+        <span class="step-ghost-num">2</span>
+      </div>
+      <div class="step">
+        <span class="step-n">03</span>
+        <h3>Work without conflicts</h3>
+        <p>Use separate branches or different files per device. Your ExternalOS session memory logs which device started each task, so nothing collides.</p>
+        <span class="step-ghost-num">3</span>
+      </div>
+    </div>
+
+    <div class="memory reveal" style="margin-top:36px;">
+      <div class="memory-eyebrow">✦ Multi-device tips</div>
+      <h2 style="font-size:clamp(1.2rem,2.5vw,1.6rem);">Two instances. Zero conflicts.</h2>
+      <p class="body" style="margin-top:14px;max-width:580px;">
+        Running Claude Code from two places at once is powerful, but
+        you need a few ground rules. Different branches per device.
+        Different files if you're on the same branch. Let your session
+        memory track which instance is working on what, so you never
+        overwrite your own progress.
+      </p>
+      <div class="chips" style="margin-top:22px;">
+        <div class="chip">Tailscale for zero-config VPN</div>
+        <div class="chip">Termius or Blink on iOS/Android</div>
+        <div class="chip">One branch per device</div>
+        <div class="chip">Session memory tracks each instance</div>
+        <div class="chip">Works over mobile data</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 <!-- INCLUDED -->
 <section>
   <div class="wrap">
@@ -585,6 +640,10 @@
       <div class="faq reveal">
         <div class="faq-q">What does "free updates permanently" mean?</div>
         <div class="faq-a">Any improvements, new modules, updated prompts, revised guides, go to all previous buyers at no cost. You don't need to buy again. Ever.</div>
+      </div>
+      <div class="faq reveal d1">
+        <div class="faq-q">Can I use ExternalOS from my phone?</div>
+        <div class="faq-a">Yes. Your Notion workspace is accessible from any device natively. For Claude Code workflows, SSH into your always-on PC from a phone app like Termius or Blink. Your ExternalOS context lives in Notion, so it's available regardless of which device you're coding from.</div>
       </div>
     </div>
   </div>
