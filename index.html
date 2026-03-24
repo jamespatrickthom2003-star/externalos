@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ExternalOS — The AI OS for Solo Operators</title>
+  <meta name="description" content="Notion workspace powered by Claude's persistent memory. Your AI finally knows who you are — and picks up exactly where you left off."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #060606;
+      --dark:    #0d0d0d;
+      --card:    #111111;
+      --card2:   #151515;
+      --border:  #1a1a1a;
+      --border2: #222222;
+      --green:   #c8f135;
+      --green-d: rgba(200,241,53,0.07);
+      --green-g: rgba(200,241,53,0.16);
+      --white:   #efefef;
+      --mid:     #888;
+      --muted:   #444;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--black); color: var(--white);
+      font-family: var(--font); -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .wrap { max-width: 920px; margin: 0 auto; padding: 0 clamp(20px,5vw,56px); }
+
+    @keyframes cur       { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes pulsedot  { 0%,100%{transform:scale(1)} 60%{transform:scale(1.5)} }
+    @keyframes marquee   { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    @keyframes glow      { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+    .reveal {
+      opacity: 0; transform: translateY(22px);
+      transition: opacity .55s ease, transform .55s ease;
+    }
+    .reveal.on { opacity: 1; transform: none; }
+    .d1 { transition-delay: .1s; }
+    .d2 { transition-delay: .2s; }
+    .d3 { transition-delay: .3s; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; inset-inline: 0; z-index: 999;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px,5vw,56px); height: 54px;
+      background: rgba(6,6,6,.88); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: var(--mono); font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--green); }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .nav-ghost { font-size: .74rem; color: var(--muted); text-decoration: none; display: none; }
+    .nav-ghost:hover { color: var(--mid); }
+    @media(min-width:600px){ .nav-ghost { display: block; } }
+    .nav-btn { background: var(--green); color: var(--black); padding: 7px 18px; border-radius: 4px; text-decoration: none; font-weight: 800; font-size: .74rem; letter-spacing: .02em; transition: opacity .15s; }
+    .nav-btn:hover { opacity: .82; }
+
+    /* HERO */
+    .hero {
+      min-height: 100svh; display: flex; flex-direction: column;
+      justify-content: center;
+      padding: 96px clamp(20px,5vw,56px) 64px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(200,241,53,0.13) 1px, transparent 1px);
+      background-size: 30px 30px;
+      mask-image: radial-gradient(ellipse 72% 52% at 50% 0%, black 0%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 72% 52% at 50% 0%, black 0%, transparent 80%);
+    }
+    .hero-glow {
+      position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+      width: 720px; height: 480px; pointer-events: none;
+      background: radial-gradient(ellipse, rgba(200,241,53,.055) 0%, transparent 68%);
+      animation: glow 5s ease-in-out infinite;
+    }
+    .hero-inner { max-width: 920px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-d); border: 1px solid var(--green-g);
+      padding: 5px 12px; border-radius: 100px; margin-bottom: 36px;
+      font-size: .63rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--green);
+    }
+    .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulsedot 2.2s ease-in-out infinite; }
+
+    .hero-problem { font-family: var(--mono); font-size: clamp(.76rem,1.4vw,.88rem); color: #606060; min-height: 1.5em; margin-bottom: 18px; letter-spacing: .01em; }
+    .hero-problem .cursor { display: inline-block; width: 7px; height: .9em; background: var(--green); vertical-align: middle; margin-left: 1px; animation: cur .85s step-end infinite; }
+
+    .hero h1 { font-size: clamp(3.2rem,8.5vw,6.4rem); font-weight: 900; letter-spacing: -.055em; line-height: .94; margin-bottom: 26px; }
+    .hero h1 .g { color: var(--green); }
+
+    .hero-hook { font-size: clamp(.9rem,1.6vw,1rem); color: var(--green); font-weight: 600; max-width: 520px; line-height: 1.65; margin-bottom: 38px; }
+
+    .cta-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 52px; }
+    .btn { display: inline-flex; align-items: center; gap: 9px; background: var(--green); color: var(--black); padding: 14px 30px; border-radius: 5px; font-weight: 900; font-size: .94rem; letter-spacing: -.01em; text-decoration: none; transition: all .2s; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(200,241,53,.25); }
+    .btn-ghost-link { color: #555; font-size: .84rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: color .15s; }
+    .btn-ghost-link:hover { color: var(--mid); }
+
+    .stats { display: flex; gap: clamp(24px,5vw,56px); flex-wrap: wrap; }
+    .stat-n { font-size: clamp(1.5rem,3vw,2rem); font-weight: 900; color: var(--white); letter-spacing: -.05em; display: block; }
+    .stat-l { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+
+    /* TICKER */
+    .ticker { overflow: hidden; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--dark); padding: 12px 0; }
+    .ticker-track { display: flex; white-space: nowrap; animation: marquee 28s linear infinite; }
+    .ticker-item { display: inline-flex; align-items: center; gap: 9px; padding: 0 24px; font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .ticker-item .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* SECTIONS */
+    section { padding: clamp(68px,9vw,108px) 0; border-top: 1px solid var(--border); }
+    .label { display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: .57rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 30px; }
+    .label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    h2 { font-size: clamp(1.9rem,4.2vw,3.1rem); font-weight: 900; letter-spacing: -.05em; line-height: 1.04; }
+    p.body { color: #6a6a6a; line-height: 1.82; }
+
+    /* PROBLEM */
+    .problems { margin-top: 52px; }
+    .prob { display: grid; grid-template-columns: 36px 1fr; gap: 0 28px; padding: 34px 0; border-bottom: 1px solid var(--border); align-items: start; }
+    .prob:first-child { border-top: 1px solid var(--border); }
+    .prob-num { font-family: var(--mono); font-size: .56rem; color: var(--muted); letter-spacing: .1em; padding-top: 4px; }
+    .prob h3 { font-size: clamp(1.05rem,2.2vw,1.45rem); font-weight: 800; color: var(--white); letter-spacing: -.03em; line-height: 1.2; margin-bottom: 11px; }
+    .prob p { font-size: .83rem; color: #555; line-height: 1.72; max-width: 560px; }
+
+    /* HOW IT WORKS */
+    .steps { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 44px; }
+    @media(max-width:640px){ .steps { grid-template-columns: 1fr; } }
+    .step { background: var(--card); padding: 32px 26px; position: relative; transition: background .2s; }
+    .step:hover { background: var(--card2); }
+    .step-n { font-family: var(--mono); font-size: .56rem; color: var(--green); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 16px; display: block; }
+    .step h3 { font-size: .95rem; font-weight: 800; color: var(--white); margin-bottom: 10px; letter-spacing: -.02em; }
+    .step p { font-size: .8rem; color: #565656; line-height: 1.7; }
+    .step-ghost-num { position: absolute; bottom: 16px; right: 20px; font-family: var(--mono); font-size: 3rem; font-weight: 900; color: rgba(255,255,255,.03); line-height: 1; letter-spacing: -.08em; pointer-events: none; }
+
+    /* OUTCOMES */
+    .outcomes { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 44px; }
+    @media(max-width:580px){ .outcomes { grid-template-columns: 1fr; } }
+    .outcome { background: var(--card); padding: 36px 30px; transition: background .2s; }
+    .outcome:hover { background: var(--card2); }
+    .outcome-icon { font-size: 1.6rem; margin-bottom: 18px; }
+    .outcome h3 { font-size: 1rem; font-weight: 800; color: var(--white); margin-bottom: 10px; letter-spacing: -.025em; }
+    .outcome p { font-size: .81rem; color: #565656; line-height: 1.72; }
+    .outcome-chip { display: inline-flex; align-items: center; gap: 5px; margin-top: 14px; font-family: var(--mono); font-size: .55rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); background: var(--green-d); border: 1px solid var(--green-g); padding: 3px 9px; border-radius: 3px; }
+
+    /* MEMORY */
+    .memory { background: var(--green-d); border: 1px solid var(--green-g); border-radius: 12px; padding: clamp(36px,5vw,56px); margin-top: 44px; }
+    .memory-eyebrow { font-family: var(--mono); font-size: .56rem; color: var(--green); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 20px; }
+    .memory h2 { margin-bottom: 18px; }
+    .memory p.body { max-width: 580px; margin-bottom: 32px; }
+
+    /* TERMINAL */
+    .terminal { background: #080808; border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px rgba(200,241,53,.04), 0 24px 60px rgba(0,0,0,.5); }
+    .term-bar { background: #121212; border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 6px; }
+    .tdot { width: 10px; height: 10px; border-radius: 50%; }
+    .term-title { font-family: var(--mono); font-size: .6rem; color: var(--muted); margin-left: auto; letter-spacing: .06em; }
+    .term-body { padding: 22px 26px; font-family: var(--mono); font-size: .77rem; line-height: 2; }
+    .tp { color: var(--green); }
+    .tc { color: var(--white); }
+    .to { color: #4a4a4a; }
+    .tv { color: #9dc455; }
+    .tblink { display: inline-block; width: 7px; height: 13px; background: var(--green); vertical-align: middle; animation: cur 1s step-end infinite; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 28px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.38); border: 1px solid var(--border2); border-radius: 4px; padding: 7px 12px; font-size: .74rem; color: #6a6a6a; }
+    .chip::before { content: '✦'; font-size: .48rem; color: var(--green); }
+
+    /* INCLUDED */
+    .included { margin-top: 44px; }
+    .inc { display: flex; gap: 22px; padding: 23px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+    .inc:last-child { border-bottom: none; }
+    .inc-n { font-family: var(--mono); font-size: .54rem; color: var(--green); letter-spacing: .1em; min-width: 34px; padding-top: 3px; }
+    .inc h3 { font-size: .94rem; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+    .inc p { font-size: .8rem; color: #555; line-height: 1.65; }
+    .tag { display: inline-block; margin-top: 8px; padding: 2px 9px; border-radius: 3px; font-size: .57rem; font-weight: 800; letter-spacing: .06em; }
+    .tg { background: rgba(200,241,53,.1); color: var(--green); }
+    .tb { background: rgba(100,160,255,.1); color: #7ab4ff; }
+    .ta { background: rgba(255,170,0,.1); color: #ffaa00; }
+
+    /* PRICING */
+    .pricing-card { max-width: 500px; margin: 44px auto 0; background: var(--card); border: 1px solid var(--border2); border-radius: 14px; overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,.5); }
+    .price-top { background: var(--green-d); border-bottom: 1px solid var(--green-g); padding: 34px 42px; position: relative; }
+    .price-badge { position: absolute; top: 18px; right: 18px; font-family: var(--mono); font-size: .54rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--green); background: rgba(200,241,53,.1); border: 1px solid var(--green-g); padding: 3px 9px; border-radius: 3px; }
+    .price-row { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 8px; }
+    .pc { font-size: 1.7rem; font-weight: 900; color: var(--green); padding-bottom: 9px; }
+    .pa { font-size: 5.2rem; font-weight: 900; color: var(--green); letter-spacing: -.07em; line-height: 1; }
+    .ptitle { font-size: .9rem; font-weight: 800; color: var(--white); margin-bottom: 3px; }
+    .pcap { font-size: .7rem; color: #5a5a5a; }
+    .price-body { padding: 30px 42px; }
+    .pline { display: flex; align-items: center; gap: 12px; padding: 9px 0; font-size: .84rem; color: var(--mid); border-bottom: 1px solid #141414; }
+    .pline:last-of-type { border-bottom: none; }
+    .pline::before { content: '✓'; color: var(--green); font-weight: 900; font-size: .68rem; }
+    .pbtn { display: block; width: 100%; margin-top: 24px; background: var(--green); color: var(--black); padding: 17px; border-radius: 6px; text-align: center; font-weight: 900; font-size: .98rem; text-decoration: none; letter-spacing: -.01em; transition: all .2s; }
+    .pbtn:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 8px 32px rgba(200,241,53,.22); }
+    .guarantee-box { display: flex; align-items: flex-start; gap: 11px; background: rgba(255,255,255,.02); border: 1px solid var(--border); border-radius: 6px; padding: 13px 15px; margin-top: 14px; font-size: .74rem; color: #545454; line-height: 1.6; }
+    .guarantee-box .icon { font-size: .95rem; flex-shrink: 0; }
+    .pnote { text-align: center; font-size: .67rem; color: var(--muted); margin-top: 11px; letter-spacing: .04em; }
+
+    /* FAQ */
+    .faqs { margin-top: 44px; }
+    .faq { border-bottom: 1px solid var(--border); padding: 23px 0; }
+    .faq-q { font-weight: 700; color: var(--white); font-size: .9rem; margin-bottom: 9px; }
+    .faq-a { font-size: .82rem; color: var(--mid); line-height: 1.76; }
+
+    /* FINAL CTA */
+    .final { text-align: center; border-top: 1px solid var(--border); padding: clamp(80px,10vw,130px) 0; position: relative; overflow: hidden; }
+    .final-glow { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 560px; height: 320px; pointer-events: none; background: radial-gradient(ellipse, rgba(200,241,53,.05) 0%, transparent 70%); }
+    .final-eye { font-family: var(--mono); font-size: .56rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: 26px; }
+    .final h2 { font-size: clamp(2.2rem,5.5vw,4rem); margin-bottom: 14px; }
+    .final-sub { font-size: .88rem; color: #5a5a5a; max-width: 400px; margin: 0 auto 36px; line-height: 1.65; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 26px clamp(20px,5vw,56px); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    footer span, footer a { font-family: var(--mono); font-size: .58rem; color: var(--muted); letter-spacing: .08em; text-decoration: none; }
+    footer a:hover { color: var(--mid); }
+
+    @media(max-width:480px){ .hero h1 { line-height: 1; } .price-top, .price-body { padding: 24px; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">ExternalOS</span>
+  <div class="nav-right">
+    <a href="#how-it-works" class="nav-ghost">How it works</a>
+    <a href="#pricing" class="nav-btn">Get it — £29 →</a>
+  </div>
+</nav>
+
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Launch pricing active
+    </div>
+
+    <p class="hero-problem">
+      <span id="typed"></span><span class="cursor"></span>
+    </p>
+
+    <h1>
+      Your AI finally<br/>
+      <span class="g">remembers you.</span>
+    </h1>
+
+    <p class="hero-hook">
+      After one session, Claude knows your rates, clients, and priorities —
+      without you ever explaining them again.
+    </p>
+
+    <div class="cta-row">
+      <a href="#pricing" class="btn">
+        Get ExternalOS — £29
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M2 6.5h9M6.5 2l4.5 4.5-4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="#how-it-works" class="btn-ghost-link">See how it works ↓</a>
+    </div>
+
+    <div class="stats">
+      <div>
+        <span class="stat-n">8</span>
+        <span class="stat-l">Linked modules</span>
+      </div>
+      <div>
+        <span class="stat-n">25</span>
+        <span class="stat-l">Claude prompts</span>
+      </div>
+      <div>
+        <span class="stat-n">3–5hrs</span>
+        <span class="stat-l">Saved per week</span>
+      </div>
+      <div>
+        <span class="stat-n">&lt;1hr</span>
+        <span class="stat-l">Setup time</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item"><span class="dot"></span>Freelance designers</span>
+    <span class="ticker-item"><span class="dot"></span>Solo consultants</span>
+    <span class="ticker-item"><span class="dot"></span>Indie developers</span>
+    <span class="ticker-item"><span class="dot"></span>Copywriters</span>
+    <span class="ticker-item"><span class="dot"></span>Motion designers</span>
+    <span class="ticker-item"><span class="dot"></span>UX designers</span>
+    <span class="ticker-item"><span class="dot"></span>Brand strategists</span>
+    <span class="ticker-item"><span class="dot"></span>Solo operators</span>
+    <span class="ticker-item"><span class="dot"></span>Creative directors</span>
+    <span class="ticker-item"><span class="dot"></span>Illustrators</span>
+    <span class="ticker-item"><span class="dot"></span>Photographers</span>
+    <span class="ticker-item"><span class="dot"></span>Video editors</span>
+    <span class="ticker-item"><span class="dot"></span>Freelance designers</span>
+    <span class="ticker-item"><span class="dot"></span>Solo consultants</span>
+    <span class="ticker-item"><span class="dot"></span>Indie developers</span>
+    <span class="ticker-item"><span class="dot"></span>Copywriters</span>
+    <span class="ticker-item"><span class="dot"></span>Motion designers</span>
+    <span class="ticker-item"><span class="dot"></span>UX designers</span>
+    <span class="ticker-item"><span class="dot"></span>Brand strategists</span>
+    <span class="ticker-item"><span class="dot"></span>Solo operators</span>
+    <span class="ticker-item"><span class="dot"></span>Creative directors</span>
+    <span class="ticker-item"><span class="dot"></span>Illustrators</span>
+    <span class="ticker-item"><span class="dot"></span>Photographers</span>
+    <span class="ticker-item"><span class="dot"></span>Video editors</span>
+  </div>
+</div>
+
+
+<!-- PROBLEM -->
+<section>
+  <div class="wrap">
+    <div class="label reveal">The problem</div>
+    <h2 class="reveal d1">AI tools are powerful.<br/>Until they forget who you are.</h2>
+    <div class="problems">
+      <div class="prob reveal">
+        <span class="prob-num">01</span>
+        <div>
+          <h3>"I have to re-explain my entire situation. Every session."</h3>
+          <p>Your rates. Your clients. What you're working on. Claude is smart enough to run your business — but only if you remember to tell it everything, every time. You can't. So you don't get half of what it's capable of.</p>
+        </div>
+      </div>
+      <div class="prob reveal d1">
+        <span class="prob-num">02</span>
+        <div>
+          <h3>You've got six tools and none of them talk to each other.</h3>
+          <p>Clients in email. Money in a spreadsheet you avoid. Tasks in an app you switched from. Notes somewhere. The admin of managing the admin is eating hours you need for actual work.</p>
+        </div>
+      </div>
+      <div class="prob reveal d2">
+        <span class="prob-num">03</span>
+        <div>
+          <h3>You know roughly what's in the account. Roughly.</h3>
+          <p>What's owed, what's overdue, what you can actually spend — that's a different question. Most freelancers avoid looking at this. ExternalOS makes it impossible to avoid.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="wrap">
+    <div class="label reveal">How it works</div>
+    <h2 class="reveal d1">Three steps to a system<br/>that runs itself.</h2>
+    <div class="steps reveal d2">
+      <div class="step">
+        <span class="step-n">Step 01</span>
+        <h3>Fill your Identity OS</h3>
+        <p>Rate card, clients, income target, positioning, 90-day goals. The full context Claude needs to give relevant advice — not generic suggestions.</p>
+        <span class="step-ghost-num">1</span>
+      </div>
+      <div class="step">
+        <span class="step-n">Step 02</span>
+        <h3>Connect Claude</h3>
+        <p>Paste your Identity OS at the start of every session. Claude now knows who you are and what you're building before it says a single word.</p>
+        <span class="step-ghost-num">2</span>
+      </div>
+      <div class="step">
+        <span class="step-n">Step 03</span>
+        <h3>Let it compound</h3>
+        <p>Log each session. Next time, Claude reads your full history. Decisions carry forward. Context accumulates. Your AI gets sharper every week.</p>
+        <span class="step-ghost-num">3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- OUTCOMES -->
+<section>
+  <div class="wrap">
+    <div class="label reveal">What changes</div>
+    <h2 class="reveal d1">Four things that look<br/>different immediately.</h2>
+    <div class="outcomes reveal d2">
+      <div class="outcome">
+        <div class="outcome-icon">🧠</div>
+        <h3>AI that gets smarter every session</h3>
+        <p>Session Memory logs each conversation. Next time, Claude reads your full history first. No briefing. No re-explaining. Just a continuing conversation that compounds over time.</p>
+        <span class="outcome-chip">Core differentiator</span>
+      </div>
+      <div class="outcome">
+        <div class="outcome-icon">💰</div>
+        <h3>Know the number. Always.</h3>
+        <p>Real-time income, expenses, usable cash, budget rules, emergency fund. You stop guessing what you can spend and start making actual decisions about money.</p>
+        <span class="outcome-chip">Finance dashboard</span>
+      </div>
+      <div class="outcome">
+        <div class="outcome-icon">🗂️</div>
+        <h3>Clients that don't fall through cracks</h3>
+        <p>7-stage pipeline from first contact to paid. Every lead tracked, every follow-up visible. Linked to your finance dashboard so nothing gets forgotten.</p>
+        <span class="outcome-chip">Client pipeline</span>
+      </div>
+      <div class="outcome">
+        <div class="outcome-icon">⚡</div>
+        <h3>Your day decided in 60 seconds</h3>
+        <p>Command Centre shows cash position, pipeline status, and today's three priorities. Open one page, know exactly where you stand, start on the right thing.</p>
+        <span class="outcome-chip">Command centre</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- CLAUDE MEMORY -->
+<section>
+  <div class="wrap">
+    <div class="memory reveal">
+      <div class="memory-eyebrow">✦ The thing that makes this different</div>
+      <h2>The only Notion template<br/>built around AI memory.</h2>
+      <p class="body" style="margin-top:16px;">Every other template gives you structure. ExternalOS gives you a system where Claude reads your full business context at the start of every session and picks up exactly where you left off. Decisions carry forward. Context accumulates. The longer you use it, the more useful it gets.</p>
+
+      <div class="terminal" style="margin-top:34px;">
+        <div class="term-bar">
+          <div class="tdot" style="background:#ff5f57"></div>
+          <div class="tdot" style="background:#febc2e"></div>
+          <div class="tdot" style="background:#28c840"></div>
+          <span class="term-title">externalos — session restore</span>
+        </div>
+        <div class="term-body">
+          <div><span class="tp">→ </span><span class="tc">load context identity-os.md</span></div>
+          <div><span class="to">  Reading Identity OS...</span></div>
+          <div><span class="to">  Session 14 · context restored · 3 open threads</span></div>
+          <div><span class="to">  Pipeline: 2 active · Cash: </span><span class="tv">£4,180</span><span class="to"> · 1 invoice overdue</span></div>
+          <div><span class="to">  Identity OS loaded. Picking up from last session.</span></div>
+          <div style="margin-top:8px"><span class="tp">claude </span><span class="tc">What are we working on today?</span></div>
+          <div><span class="to">  Based on open threads: follow up </span><span class="tv">Alex M.</span><span class="to">, then proposal review.</span></div>
+          <div><span class="to">  Invoice to </span><span class="tv">Studio K</span><span class="to"> is 4 days overdue — I'd chase that first.</span></div>
+          <div style="margin-top:8px"><span class="tp">→ </span><span class="tblink"></span></div>
+        </div>
+      </div>
+
+      <div class="chips">
+        <div class="chip">Session memory architecture</div>
+        <div class="chip">25 ready-to-use Claude prompts</div>
+        <div class="chip">AI assistant integration guide</div>
+        <div class="chip">Works on Claude free tier</div>
+        <div class="chip">No Notion AI subscription needed</div>
+        <div class="chip">UK freelance rate data included</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- INCLUDED -->
+<section>
+  <div class="wrap">
+    <div class="label reveal">What's in the box</div>
+    <h2 class="reveal d1">Everything. Once.<br/>No upsells.</h2>
+    <div class="included">
+      <div class="inc reveal">
+        <span class="inc-n">01</span>
+        <div>
+          <h3>The Full Notion Workspace</h3>
+          <p>All 8 modules, fully linked. Duplicate in one click. Works on Notion's free plan — no paid subscription required.</p>
+          <span class="tag tg">Core template</span>
+        </div>
+      </div>
+      <div class="inc reveal d1">
+        <span class="inc-n">02</span>
+        <div>
+          <h3>Setup Guide</h3>
+          <p>4-step walkthrough: duplicate, personalise, connect Claude, run your first session. Under an hour, no jargon.</p>
+          <span class="tag tb">Documentation</span>
+        </div>
+      </div>
+      <div class="inc reveal d2">
+        <span class="inc-n">03</span>
+        <div>
+          <h3>25 Claude Prompt Pack</h3>
+          <p>Morning briefings, client proposals, finance reviews, session logging, weekly planning. Drop them straight in and run them.</p>
+          <span class="tag tg">Bonus</span>
+        </div>
+      </div>
+      <div class="inc reveal d3">
+        <span class="inc-n">04</span>
+        <div>
+          <h3>UK Freelance Rate Guide 2026</h3>
+          <p>Median day rates by discipline, minimum floors, project vs day rate guidance. Live market data, March 2026.</p>
+          <span class="tag tb">Bonus</span>
+        </div>
+      </div>
+      <div class="inc reveal">
+        <span class="inc-n">05</span>
+        <div>
+          <h3>Free Updates, Permanently</h3>
+          <p>Every improvement to ExternalOS goes to all previous buyers at no cost. One payment, all future versions.</p>
+          <span class="tag ta">Lifetime access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="label reveal">Pricing</div>
+    <h2 class="reveal d1">One price.<br/>No subscriptions. No recurring anything.</h2>
+    <div class="pricing-card reveal d2">
+      <div class="price-top">
+        <span class="price-badge">Launch price</span>
+        <div class="price-row">
+          <span class="pc">£</span>
+          <span class="pa">29</span>
+        </div>
+        <div class="ptitle">ExternalOS: Freelancer</div>
+        <div class="pcap">One-time · Instant delivery via Gumroad</div>
+      </div>
+      <div class="price-body">
+        <div class="pline">Full Notion workspace — 8 linked modules</div>
+        <div class="pline">Setup guide (PDF + Notion)</div>
+        <div class="pline">25 Claude prompt pack</div>
+        <div class="pline">UK Freelance Rate Guide 2026</div>
+        <div class="pline">Free updates permanently</div>
+        <div class="pline">Works on Notion free plan</div>
+        <a href="YOUR_GUMROAD_LINK" class="pbtn" id="buy">Get ExternalOS now →</a>
+        <div class="guarantee-box">
+          <span class="icon">🛡️</span>
+          <span><strong style="color:var(--mid);">30-day money-back guarantee.</strong> If it doesn't work for your workflow, reply to your Gumroad receipt for a full refund. No questions asked.</span>
+        </div>
+        <p class="pnote">Secure checkout · No subscription · Instant download</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- FAQ -->
+<section>
+  <div class="wrap">
+    <div class="label reveal">FAQ</div>
+    <h2 class="reveal d1">Questions.</h2>
+    <div class="faqs">
+      <div class="faq reveal">
+        <div class="faq-q">Can't I just build this myself for free?</div>
+        <div class="faq-a">You can. Building a comparable system from scratch takes 15–20 hours: architecting the database relationships, writing and testing the prompts, building the Session Memory loop, writing documentation. ExternalOS costs £29 and sets up in under an hour. The value isn't the Notion pages — it's the design work already done.</div>
+      </div>
+      <div class="faq reveal d1">
+        <div class="faq-q">Do I need a paid Notion account?</div>
+        <div class="faq-a">No. Everything works on Notion's free plan. No Notion AI needed — this system uses Claude instead, which you likely already have.</div>
+      </div>
+      <div class="faq reveal d2">
+        <div class="faq-q">Do I need a paid Claude plan?</div>
+        <div class="faq-a">No. Claude's free tier works. Pro or Max gives you more messages and longer context windows, but you don't need either to get started.</div>
+      </div>
+      <div class="faq reveal">
+        <div class="faq-q">I'm not a designer. Does this still work for me?</div>
+        <div class="faq-a">Yes. The pipeline, finance dashboard, and session memory system are discipline-agnostic. The setup guide walks you through adapting every field to your specific line of work.</div>
+      </div>
+      <div class="faq reveal d1">
+        <div class="faq-q">How long does setup actually take?</div>
+        <div class="faq-a">Under an hour. Four steps: duplicate, personalise, connect Claude, run your first session. Most people are operational by step two.</div>
+      </div>
+      <div class="faq reveal d2">
+        <div class="faq-q">I'm outside the UK — does the rate guide apply?</div>
+        <div class="faq-a">The UK guide is a standalone bonus. The core system is entirely universal — rates, currencies, and budget categories are all customisable fields.</div>
+      </div>
+      <div class="faq reveal">
+        <div class="faq-q">What does "free updates permanently" mean?</div>
+        <div class="faq-a">Any improvements — new modules, updated prompts, revised guides — go to all previous buyers at no cost. You don't need to buy again. Ever.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- FINAL CTA -->
+<div class="final">
+  <div class="final-glow"></div>
+  <div class="wrap" style="position:relative;z-index:1;">
+    <p class="final-eye">Built by operators. For operators.</p>
+    <h2 class="reveal">Stop starting over.<br/><span style="color:var(--green);">Get ExternalOS.</span></h2>
+    <p class="final-sub reveal d1">Launch pricing ends when the price goes up. Lock it in now at £29.</p>
+    <a href="#pricing" class="btn reveal d2" style="display:inline-flex;font-size:1rem;padding:16px 42px;">
+      Get started — £29 →
+    </a>
+    <p style="margin-top:18px;font-size:.72rem;color:var(--muted);" class="reveal d3">One payment. Instant delivery. 30-day guarantee.</p>
+    <p style="margin-top:12px;font-size:.68rem;color:var(--muted);">Questions? <a href="mailto:team@externalos.com" style="color:#4a4a4a;text-decoration:underline;">team@externalos.com</a></p>
+  </div>
+</div>
+
+<footer>
+  <span>ExternalOS — The AI OS for Solo Operators</span>
+  <span><a href="mailto:team@externalos.com">team@externalos.com</a></span>
+</footer>
+
+
+<script>
+  // TYPEWRITER
+  const lines = [
+    "Every Claude session, you re-explain your whole situation.",
+    "Your clients, rates, and goals? Gone. Again.",
+    "You're not using AI — you're babysitting it.",
+    "The system you need doesn't exist. Yet."
+  ];
+  const el = document.getElementById('typed');
+  let li = 0, ci = 0, del = false, hold = false;
+  function tick() {
+    const s = lines[li];
+    if (hold) { hold = false; del = true; setTimeout(tick, 80); return; }
+    if (!del) {
+      el.textContent = s.slice(0, ++ci);
+      if (ci === s.length) { hold = true; setTimeout(tick, 2400); }
+      else setTimeout(tick, 40);
+    } else {
+      el.textContent = s.slice(0, --ci);
+      if (ci === 0) { del = false; li = (li + 1) % lines.length; setTimeout(tick, 320); }
+      else setTimeout(tick, 20);
+    }
+  }
+  setTimeout(tick, 900);
+
+  // SCROLL REVEAL
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+  }), { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
