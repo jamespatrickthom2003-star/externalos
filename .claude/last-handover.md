@@ -3,12 +3,13 @@
 **From:** Claude Phone (end of night session)
 **Date:** 25 March 2026
 **For:** Cowork on PC (morning) or next Claude Code session
+**Trigger:** James will say "update everything in the handover" — that means execute ALL updates below into Notion.
 
 ---
 
-## COWORK MORNING TASKLIST
+## COWORK: UPDATE ALL OF THE FOLLOWING INTO NOTION
 
-Paste the following updates into Notion EM. This is the full relay from tonight's phone session.
+This is a full relay from tonight's Claude Phone session (Session 38). Apply every update below.
 
 ### 1. EM Header
 > **Last updated:** 25 March 2026 — Session 38 (Claude Phone — shared consciousness architecture built)
