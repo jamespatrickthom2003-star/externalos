@@ -1,0 +1,51 @@
+{
+  "title": "Budget Aldi Food Shop for Dream Physique",
+  "source": "@oliveroldbury on TikTok",
+  "total": 37.28,
+  "currency": "GBP",
+  "categories": {
+    "protein": {
+      "items": [
+        { "name": "Rump Steak (Ashfields, 21 Day Matured)", "price": 4.05 },
+        { "name": "Chicken Drum Fillets x2 (Ashfields, 600g each)", "price": 5.90 },
+        { "name": "Wild Pink Salmon Fillets (The Fishmonger)", "price": 3.49 },
+        { "name": "Basa Fillets (The Fishmonger)", "price": 1.99 }
+      ],
+      "subtotal": 15.43
+    },
+    "vegetables": {
+      "items": [
+        { "name": "Baby Spinach (Nature's Pick)", "price": 1.15 },
+        { "name": "Romaine Hearts Lettuce (Nature's Pick)", "price": 1.15 },
+        { "name": "Sweet Peppers", "price": 1.99 },
+        { "name": "Cucumber", "price": 0.99 },
+        { "name": "Cooked Beetroot", "price": 0.66 },
+        { "name": "Avocados (Nature's Pick)", "price": 1.45 },
+        { "name": "Red Chillies", "price": 0.55 },
+        { "name": "Green Pitted Olives", "price": 0.89 }
+      ],
+      "subtotal": 8.83
+    },
+    "dairy_and_eggs": {
+      "items": [
+        { "name": "Cottage Cheese x2 (Dairly, High Protein)", "price": 2.18 },
+        { "name": "0% Fat Greek Yogurt (Brooklea)", "price": 1.99 },
+        { "name": "15 Free Range Mixed Size Eggs (Merevale)", "price": 2.89 }
+      ],
+      "subtotal": 7.06
+    },
+    "frozen_fruit": {
+      "items": [
+        { "name": "Frozen Mango Chunks (Four Seasons)", "price": 1.59 },
+        { "name": "Frozen Blueberries (Four Seasons)", "price": 1.99 }
+      ],
+      "subtotal": 3.58
+    },
+    "carbs": {
+      "items": [
+        { "name": "Sweet Potatoes (Nature's Pick, 1kg)", "price": 2.38 }
+      ],
+      "subtotal": 2.38
+    }
+  }
+}
